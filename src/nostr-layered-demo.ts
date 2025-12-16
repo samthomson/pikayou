@@ -129,10 +129,10 @@ function nip44Decrypt(payload: string, conversationKey: Uint8Array): string {
 
 // === DEMO ===
 
-const DECOY_MESSAGE = 'Meeting at 5pm for coffee'
-const HIDDEN_MESSAGE = 'The treasure is buried under the oak tree'
+const DECOY_MESSAGE = 'lets get some coffee later'
+const HIDDEN_MESSAGE = 'shelling point at noon'
 const NO_PASSWORD = ''
-const SECRET_PASSWORD = 'our-secret-phrase'
+const SECRET_PASSWORD = 'password'
 
 async function main() {
   console.log('╔════════════════════════════════════════════════════════════╗')
