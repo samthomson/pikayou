@@ -1,14 +1,10 @@
 /**
- * Simple False Bottom Implementation
+ * Simple False Bottom Demo (XOR-based)
  * 
- * Concept: XOR-based scheme where ONE ciphertext decrypts to different
- * messages with different keys.
- * 
- * ciphertext = realMessage XOR realKey
- * We choose: decoyKey = ciphertext XOR decoyMessage
- * 
- * So: ciphertext XOR realKey = realMessage
- *     ciphertext XOR decoyKey = decoyMessage
+ * How it works:
+ * - ciphertext = realMessage XOR realKey
+ * - decoyKey = ciphertext XOR decoyMessage
+ * - Same ciphertext, different keys → different messages
  */
 
 import crypto from 'crypto'
@@ -27,62 +23,65 @@ function padToLength(msg: string, len: number): Buffer {
   return buf
 }
 
-// === ENCRYPTION ===
-function createFalseBottom(realMessage: string, decoyMessage: string) {
-  const maxLen = Math.max(realMessage.length, decoyMessage.length, 64)
-  
-  const realBuf = padToLength(realMessage, maxLen)
+function createFalseBottom(hiddenMessage: string, decoyMessage: string) {
+  const maxLen = Math.max(hiddenMessage.length, decoyMessage.length, 64)
+  const hiddenBuf = padToLength(hiddenMessage, maxLen)
   const decoyBuf = padToLength(decoyMessage, maxLen)
-  
-  // Generate random key for real message
-  const realKey = crypto.randomBytes(maxLen)
-  
-  // Create ciphertext: realMessage XOR realKey
-  const ciphertext = xorBuffers(realBuf, realKey)
-  
-  // Derive decoy key: ciphertext XOR decoyMessage
-  // This ensures: ciphertext XOR decoyKey = decoyMessage
+  const hiddenKey = crypto.randomBytes(maxLen)
+  const ciphertext = xorBuffers(hiddenBuf, hiddenKey)
   const decoyKey = xorBuffers(ciphertext, decoyBuf)
-  
   return {
     ciphertext: ciphertext.toString('base64'),
-    realKey: realKey.toString('base64'),
+    hiddenKey: hiddenKey.toString('base64'),
     decoyKey: decoyKey.toString('base64')
   }
 }
 
-// === DECRYPTION ===
 function decrypt(ciphertext: string, key: string): string {
   const ctBuf = Buffer.from(ciphertext, 'base64')
   const keyBuf = Buffer.from(key, 'base64')
-  const result = xorBuffers(ctBuf, keyBuf)
-  return result.toString().replace(/\0+$/, '') // trim null padding
+  return xorBuffers(ctBuf, keyBuf).toString().replace(/\0+$/, '')
 }
 
-// === DEMO ===
-const REAL_MESSAGE = 'The treasure is buried under the oak tree'
 const DECOY_MESSAGE = 'Meeting at 5pm for coffee'
+const HIDDEN_MESSAGE = 'The treasure is buried under the oak tree'
 
-console.log('=== SIMPLE FALSE BOTTOM DEMO ===\n')
+console.log('╔════════════════════════════════════════════════════════════╗')
+console.log('║              SIMPLE FALSE BOTTOM DEMO                      ║')
+console.log('║  One ciphertext, two keys → different messages (XOR)       ║')
+console.log('╚════════════════════════════════════════════════════════════╝\n')
 
-console.log('Original messages:')
-console.log('  Real:', REAL_MESSAGE)
-console.log('  Decoy:', DECOY_MESSAGE)
+// === 1. MESSAGES ===
+console.log('┌─ 1. MESSAGES ─────────────────────────────────────────────┐')
+console.log('│  Decoy:  "' + DECOY_MESSAGE + '"')
+console.log('│  Hidden: "' + HIDDEN_MESSAGE + '"')
+console.log('└───────────────────────────────────────────────────────────┘\n')
 
-const { ciphertext, realKey, decoyKey } = createFalseBottom(REAL_MESSAGE, DECOY_MESSAGE)
+// === 2. ENCRYPT ===
+const { ciphertext, hiddenKey, decoyKey } = createFalseBottom(HIDDEN_MESSAGE, DECOY_MESSAGE)
 
-console.log('\n--- ONE Ciphertext, TWO Keys ---')
-console.log('Ciphertext:', ciphertext)
-console.log('Real Key:', realKey)
-console.log('Decoy Key:', decoyKey)
+console.log('┌─ 2. PAYLOAD ──────────────────────────────────────────────┐')
+console.log('│  Type: Single ciphertext + two keys')
+console.log('│  Ciphertext: ' + ciphertext.slice(0, 50) + '...')
+console.log('│  Decoy Key:  ' + decoyKey.slice(0, 50) + '...')
+console.log('│  Hidden Key: ' + hiddenKey.slice(0, 50) + '...')
+console.log('└───────────────────────────────────────────────────────────┘\n')
 
-console.log('\n--- Decryption ---')
-console.log('With REAL key:', decrypt(ciphertext, realKey))
-console.log('With DECOY key:', decrypt(ciphertext, decoyKey))
+// === 3. DECRYPT NORMAL ===
+const decoyResult = decrypt(ciphertext, decoyKey)
 
-console.log('\n--- Scenario ---')
-console.log('Store: ciphertext + both keys')
-console.log('If coerced: give up ciphertext + decoyKey')
-console.log('They decrypt:', decrypt(ciphertext, decoyKey))
-console.log('Your real message stays hidden!')
+console.log('┌─ 3. DECRYPT (normal way - decoy key) ───────────────────────┐')
+console.log('│  Key: decoyKey')
+console.log('│  Result: "' + decoyResult + '"')
+console.log('└───────────────────────────────────────────────────────────┘\n')
 
+// === 4. DECRYPT HIDDEN ===
+const hiddenResult = decrypt(ciphertext, hiddenKey)
+
+console.log('┌─ 4. DECRYPT (secret way - hidden key) ──────────────────────┐')
+console.log('│  Key: hiddenKey')
+console.log('│  Result: "' + hiddenResult + '"')
+console.log('└───────────────────────────────────────────────────────────┘\n')
+
+console.log('✓ Same ciphertext, different keys → different messages')
+console.log('✓ Mathematical property of XOR (educational demo)')

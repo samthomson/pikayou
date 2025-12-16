@@ -3,59 +3,66 @@
  * 
  * How it works:
  * - Uses RSA asymmetric encryption
- * - You encrypt original message with YOUR public key
- * - Library generates a SECOND key pair for the plausible message
- * - If coerced, you give up the plausible private key → reveals decoy
- * - Your real private key → reveals real message
- * - Both ciphertexts look legitimate
+ * - Creates TWO separate ciphertexts with TWO key pairs
+ * - Give up plausible keypair + ciphertext if coerced
  */
 
 import { DeniableEncryption } from 'deniable-encryption'
 
-const REAL_MESSAGE = 'The treasure is buried under the oak tree'
 const DECOY_MESSAGE = 'Meeting at 5pm for coffee'
+const HIDDEN_MESSAGE = 'The treasure is buried under the oak tree'
 
-console.log('=== DENIABLE ENCRYPTION DEMO ===\n')
+console.log('╔════════════════════════════════════════════════════════════╗')
+console.log('║              DENIABLE ENCRYPTION DEMO                      ║')
+console.log('║  Two ciphertexts, two keypairs (RSA-based)                 ║')
+console.log('╚════════════════════════════════════════════════════════════╝\n')
 
-// Generate your main key pair
+// === 1. MESSAGES ===
+console.log('┌─ 1. MESSAGES ─────────────────────────────────────────────┐')
+console.log('│  Decoy:  "' + DECOY_MESSAGE + '"')
+console.log('│  Hidden: "' + HIDDEN_MESSAGE + '"')
+console.log('└───────────────────────────────────────────────────────────┘\n')
+
+// === 2. ENCRYPT ===
 const { publicKey, privateKey } = DeniableEncryption.generateKeyPair()
-
-console.log('Original messages:')
-console.log('  Decoy:', DECOY_MESSAGE)
-console.log('  Real:', REAL_MESSAGE)
-
-// Create deniable encryption
 const {
   encryptedOriginalMessage,
   plausibleKeyPair,
   encryptedPlausibleMessage
 } = DeniableEncryption.createDeniableEncryption({
-  originalMessage: REAL_MESSAGE,
+  originalMessage: HIDDEN_MESSAGE,
   plausibleMessage: DECOY_MESSAGE,
   publicKey
 })
 
-console.log('\nEncrypted original:', encryptedOriginalMessage.substring(0, 60) + '...')
-console.log('Encrypted plausible:', encryptedPlausibleMessage.substring(0, 60) + '...')
+console.log('┌─ 2. PAYLOAD ──────────────────────────────────────────────┐')
+console.log('│  Type: TWO separate RSA-encrypted ciphertexts')
+console.log('│  Ciphertext (hidden):  ' + encryptedOriginalMessage.slice(0, 40) + '...')
+console.log('│  Ciphertext (decoy):   ' + encryptedPlausibleMessage.slice(0, 40) + '...')
+console.log('│  Note: Each has its own keypair')
+console.log('└───────────────────────────────────────────────────────────┘\n')
 
-// Decrypt with real private key
-console.log('\n--- Decryption ---')
-
-const decryptedReal = DeniableEncryption.decryptWithPrivateKey(
-  privateKey,
-  encryptedOriginalMessage
-)
-
-const decryptedDecoy = DeniableEncryption.decryptWithPrivateKey(
+// === 3. DECRYPT NORMAL ===
+const decoyResult = DeniableEncryption.decryptWithPrivateKey(
   plausibleKeyPair.privateKey,
   encryptedPlausibleMessage
 )
 
-console.log('With YOUR private key:', decryptedReal)
-console.log('With PLAUSIBLE private key:', decryptedDecoy)
+console.log('┌─ 3. DECRYPT (normal way - plausible private key) ─────────┐')
+console.log('│  Key: plausibleKeyPair.privateKey')
+console.log('│  Result: "' + decoyResult + '"')
+console.log('└───────────────────────────────────────────────────────────┘\n')
 
-console.log('\n--- Scenario ---')
-console.log('If coerced: give up plausibleKeyPair.privateKey + encryptedPlausibleMessage')
-console.log('They decrypt and see:', decryptedDecoy)
-console.log('Your real message stays hidden!')
+// === 4. DECRYPT HIDDEN ===
+const hiddenResult = DeniableEncryption.decryptWithPrivateKey(
+  privateKey,
+  encryptedOriginalMessage
+)
 
+console.log('┌─ 4. DECRYPT (secret way - real private key) ────────────────┐')
+console.log('│  Key: privateKey (your real key)')
+console.log('│  Result: "' + hiddenResult + '"')
+console.log('└───────────────────────────────────────────────────────────┘\n')
+
+console.log('✓ Two separate ciphertexts, two separate keypairs')
+console.log('✓ If coerced: give up plausible keypair + its ciphertext')
