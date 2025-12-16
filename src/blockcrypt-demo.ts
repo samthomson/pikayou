@@ -47,7 +47,8 @@ async function main() {
   console.log('│  Type: Single encrypted block (salt + iv + headers + data)')
   console.log('│  Salt: ' + block.salt.toString('base64'))
   console.log('│  IV:   ' + block.iv.toString('base64'))
-  console.log('│  Data: ' + block.data.toString('base64').slice(0, 50) + '...')
+  console.log('│  Headers: ' + block.headers.toString('base64'))
+  console.log('│  Data: ' + block.data.toString('base64'))
   console.log('└───────────────────────────────────────────────────────────┘\n')
 
   // === 3. DECRYPT NORMAL ===

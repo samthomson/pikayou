@@ -62,9 +62,9 @@ const { ciphertext, hiddenKey, decoyKey } = createFalseBottom(HIDDEN_MESSAGE, DE
 
 console.log('┌─ 2. PAYLOAD ──────────────────────────────────────────────┐')
 console.log('│  Type: Single ciphertext + two keys')
-console.log('│  Ciphertext: ' + ciphertext.slice(0, 50) + '...')
-console.log('│  Decoy Key:  ' + decoyKey.slice(0, 50) + '...')
-console.log('│  Hidden Key: ' + hiddenKey.slice(0, 50) + '...')
+console.log('│  Ciphertext: ' + ciphertext)
+console.log('│  Decoy Key:  ' + decoyKey)
+console.log('│  Hidden Key: ' + hiddenKey)
 console.log('└───────────────────────────────────────────────────────────┘\n')
 
 // === 3. DECRYPT NORMAL ===

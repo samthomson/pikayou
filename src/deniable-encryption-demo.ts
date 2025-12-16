@@ -37,8 +37,10 @@ const {
 
 console.log('┌─ 2. PAYLOAD ──────────────────────────────────────────────┐')
 console.log('│  Type: TWO separate RSA-encrypted ciphertexts')
-console.log('│  Ciphertext (hidden):  ' + encryptedOriginalMessage.slice(0, 40) + '...')
-console.log('│  Ciphertext (decoy):   ' + encryptedPlausibleMessage.slice(0, 40) + '...')
+console.log('│  Ciphertext (hidden):')
+console.log('│    ' + encryptedOriginalMessage)
+console.log('│  Ciphertext (decoy):')
+console.log('│    ' + encryptedPlausibleMessage)
 console.log('│  Note: Each has its own keypair')
 console.log('└───────────────────────────────────────────────────────────┘\n')
 

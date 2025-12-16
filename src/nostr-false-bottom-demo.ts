@@ -102,9 +102,11 @@ async function main() {
 
   console.log('┌─ 2. PAYLOAD ──────────────────────────────────────────────┐')
   console.log('│  Type: NIP-44 encrypted message (goes in Nostr event)')
-  console.log('│  NIP-44 payload: ' + nip44Payload.slice(0, 40) + '...')
+  console.log('│  NIP-44 payload:')
+  console.log('│    ' + nip44Payload)
   console.log('│  Inner content: { ct: ciphertext, dk: decoyKey }')
-  console.log('│  Hidden key: shared separately (not in payload)')
+  console.log('│  Hidden key (shared separately):')
+  console.log('│    ' + hiddenKey)
   console.log('└───────────────────────────────────────────────────────────┘\n')
 
   // === 3. DECRYPT NORMAL ===
