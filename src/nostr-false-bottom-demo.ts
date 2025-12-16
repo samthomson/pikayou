@@ -110,10 +110,10 @@ async function main() {
   console.log('=== NOSTR + FALSE BOTTOM DEMO ===\n')
   
   // Generate sender and recipient keys (like nsec/npub)
-  const senderPrivKey = randomBytes(32)
+  const senderPrivKey = secp.utils.randomSecretKey()
   const senderPubKey = secp.getPublicKey(senderPrivKey, true)
   
-  const recipientPrivKey = randomBytes(32)
+  const recipientPrivKey = secp.utils.randomSecretKey()
   const recipientPubKey = secp.getPublicKey(recipientPrivKey, true)
   
   console.log('Sender pubkey:', Buffer.from(senderPubKey).toString('hex').slice(0, 16) + '...')
