@@ -7,7 +7,11 @@
     "demo:deniable": "npx tsx src/deniable-encryption-demo.ts",
     "demo:false-bottom": "npx tsx src/false-bottom-demo.ts",
     "demo:simple": "npx tsx src/simple-false-bottom.ts",
-    "demo:nostr": "npx tsx src/nostr-false-bottom-demo.ts"
+    "demo:nostr": "npx tsx src/nostr-false-bottom-demo.ts",
+    "demo:stego": "npx tsx src/nostr-stego-demo.ts",
+    "demo:concat": "npx tsx src/nostr-concat-demo.ts",
+    "demo:nostr-bc": "npx tsx src/nostr-blockcrypt-demo.ts",
+    "demo:layered": "npx tsx src/nostr-layered-demo.ts"
   },
   "dependencies": {
     "@noble/ciphers": "^2.1.1",
