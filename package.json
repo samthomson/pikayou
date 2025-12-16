@@ -1,0 +1,20 @@
+{
+  "name": "pikayou",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "demo:blockcrypt": "npx tsx src/blockcrypt-demo.ts",
+    "demo:deniable": "npx tsx src/deniable-encryption-demo.ts",
+    "demo:false-bottom": "npx tsx src/false-bottom-demo.ts",
+    "demo:simple": "npx tsx src/simple-false-bottom.ts"
+  },
+  "dependencies": {
+    "blockcrypt": "^0.0.1-beta.22",
+    "deniable-encryption": "^1.0.1",
+    "false-bottom": "^1.0.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
