@@ -6,9 +6,13 @@
     "demo:blockcrypt": "npx tsx src/blockcrypt-demo.ts",
     "demo:deniable": "npx tsx src/deniable-encryption-demo.ts",
     "demo:false-bottom": "npx tsx src/false-bottom-demo.ts",
-    "demo:simple": "npx tsx src/simple-false-bottom.ts"
+    "demo:simple": "npx tsx src/simple-false-bottom.ts",
+    "demo:nostr": "npx tsx src/nostr-false-bottom-demo.ts"
   },
   "dependencies": {
+    "@noble/ciphers": "^2.1.1",
+    "@noble/hashes": "^2.0.1",
+    "@noble/secp256k1": "^3.0.0",
     "blockcrypt": "^0.0.1-beta.22",
     "deniable-encryption": "^1.0.1",
     "false-bottom": "^1.0.1"
