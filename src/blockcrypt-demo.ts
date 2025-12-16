@@ -20,9 +20,9 @@ const kdf = async (passphrase: string, salt: string): Promise<Buffer> => {
 }
 
 const DECOY_MESSAGE = 'Meeting at 5pm for coffee'
-const HIDDEN_MESSAGE = 'The treasure is buried under the oak tree'
-const DECOY_PASS = 'password123'
-const HIDDEN_PASS = 'correct-horse-battery-staple'
+const HIDDEN_MESSAGE = 'shelling point at noon'
+const DECOY_PASS = '123'
+const HIDDEN_PASS = '456'
 
 async function main() {
   console.log('╔════════════════════════════════════════════════════════════╗')
