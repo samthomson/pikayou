@@ -1,11 +1,11 @@
 /**
- * Nostr + False Bottom Demo
+ * Nostr + False Bottom Demo (Backwards Compatible)
  * 
  * How it works:
- * - Create false-bottom (1 ciphertext, 2 keys)
- * - Package with decoy key, encrypt with NIP-44
- * - Recipient decrypts NIP-44 → gets ciphertext + decoy key
- * - Hidden key shared separately
+ * - NIP-44 message contains ONLY the decoy (normal plaintext!)
+ * - Secret = hiddenMessage XOR decoyMessage (shared separately)
+ * - Any Nostr client decrypts → sees decoy (100% compatible)
+ * - With the secret: decoy XOR secret → hidden message
  */
 
 import { xchacha20poly1305 } from '@noble/ciphers/chacha.js'
@@ -16,35 +16,29 @@ import * as secp from '@noble/secp256k1'
 
 // === FALSE BOTTOM (XOR) ===
 function xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const result = new Uint8Array(Math.max(a.length, b.length))
-  for (let i = 0; i < result.length; i++) result[i] = (a[i] || 0) ^ (b[i] || 0)
+  const len = Math.max(a.length, b.length)
+  const result = new Uint8Array(len)
+  for (let i = 0; i < len; i++) result[i] = (a[i] || 0) ^ (b[i] || 0)
   return result
 }
 
-function padMessage(msg: string, len: number): Uint8Array {
-  const buf = new Uint8Array(len)
-  buf.set(new TextEncoder().encode(msg))
-  return buf
+function createSecret(hiddenMessage: string, decoyMessage: string): string {
+  // Secret = hidden XOR decoy (padded to same length)
+  const maxLen = Math.max(hiddenMessage.length, decoyMessage.length)
+  const hiddenBuf = new Uint8Array(maxLen)
+  const decoyBuf = new Uint8Array(maxLen)
+  hiddenBuf.set(new TextEncoder().encode(hiddenMessage))
+  decoyBuf.set(new TextEncoder().encode(decoyMessage))
+  const secret = xorBytes(hiddenBuf, decoyBuf)
+  return Buffer.from(secret).toString('base64')
 }
 
-function createFalseBottom(hiddenMessage: string, decoyMessage: string) {
-  const maxLen = Math.max(hiddenMessage.length, decoyMessage.length, 64)
-  const hiddenBuf = padMessage(hiddenMessage, maxLen)
-  const decoyBuf = padMessage(decoyMessage, maxLen)
-  const hiddenKey = randomBytes(maxLen)
-  const ciphertext = xorBytes(hiddenBuf, hiddenKey)
-  const decoyKey = xorBytes(ciphertext, decoyBuf)
-  return {
-    ciphertext: Buffer.from(ciphertext).toString('base64'),
-    hiddenKey: Buffer.from(hiddenKey).toString('base64'),
-    decoyKey: Buffer.from(decoyKey).toString('base64')
-  }
-}
-
-function decryptFalseBottom(ciphertext: string, key: string): string {
-  const ct = new Uint8Array(Buffer.from(ciphertext, 'base64'))
-  const k = new Uint8Array(Buffer.from(key, 'base64'))
-  return new TextDecoder().decode(xorBytes(ct, k)).replace(/\0+$/, '')
+function revealHidden(decoyMessage: string, secret: string): string {
+  const secretBuf = new Uint8Array(Buffer.from(secret, 'base64'))
+  const decoyBuf = new Uint8Array(secretBuf.length)
+  decoyBuf.set(new TextEncoder().encode(decoyMessage))
+  const hidden = xorBytes(decoyBuf, secretBuf)
+  return new TextDecoder().decode(hidden).replace(/\0+$/, '')
 }
 
 // === NIP-44 ===
@@ -79,7 +73,7 @@ const HIDDEN_MESSAGE = 'The treasure is buried under the oak tree'
 async function main() {
   console.log('╔════════════════════════════════════════════════════════════╗')
   console.log('║              NOSTR + FALSE BOTTOM DEMO                     ║')
-  console.log('║  NIP-44 encrypted, with false-bottom inside                ║')
+  console.log('║  100% backwards compatible with normal NIP-44              ║')
   console.log('╚════════════════════════════════════════════════════════════╝\n')
 
   // Generate keys
@@ -94,45 +88,49 @@ async function main() {
   console.log('│  Hidden: "' + HIDDEN_MESSAGE + '"')
   console.log('└───────────────────────────────────────────────────────────┘\n')
 
-  // === 2. ENCRYPT ===
-  const { ciphertext, hiddenKey, decoyKey } = createFalseBottom(HIDDEN_MESSAGE, DECOY_MESSAGE)
-  const innerPayload = JSON.stringify({ ct: ciphertext, dk: decoyKey })
+  // === 2. CREATE SECRET & ENCRYPT ===
+  // The secret is shared separately (could be pre-shared, sent via different channel, etc)
+  const secret = createSecret(HIDDEN_MESSAGE, DECOY_MESSAGE)
+  
+  // NIP-44 encrypts ONLY the decoy message (completely normal!)
   const conversationKey = getConversationKey(senderPrivKey, recipientPubKey)
-  const nip44Payload = nip44Encrypt(innerPayload, conversationKey)
+  const nip44Payload = nip44Encrypt(DECOY_MESSAGE, conversationKey)
 
   console.log('┌─ 2. PAYLOAD ──────────────────────────────────────────────┐')
-  console.log('│  Type: NIP-44 encrypted message (goes in Nostr event)')
-  console.log('│  NIP-44 payload:')
+  console.log('│  NIP-44 content: JUST the decoy message (normal plaintext!)')
+  console.log('│')
+  console.log('│  NIP-44 encrypted payload:')
   console.log('│    ' + nip44Payload)
-  console.log('│  Inner content: { ct: ciphertext, dk: decoyKey }')
-  console.log('│  Hidden key (shared separately):')
-  console.log('│    ' + hiddenKey)
+  console.log('│')
+  console.log('│  Secret (shared separately, e.g. pre-shared or via other channel):')
+  console.log('│    ' + secret)
+  console.log('│')
+  console.log('│  ✓ Any Nostr client can decrypt this normally!')
   console.log('└───────────────────────────────────────────────────────────┘\n')
 
-  // === 3. DECRYPT NORMAL ===
+  // === 3. DECRYPT NORMAL (any Nostr client) ===
   const recipientConvKey = getConversationKey(recipientPrivKey, senderPubKey)
-  const decryptedInner = nip44Decrypt(nip44Payload, recipientConvKey)
-  const { ct, dk } = JSON.parse(decryptedInner)
-  const decoyResult = decryptFalseBottom(ct, dk)
+  const decoyResult = nip44Decrypt(nip44Payload, recipientConvKey)
 
-  console.log('┌─ 3. DECRYPT (normal way - NIP-44 + decoy key) ────────────┐')
-  console.log('│  Step 1: Decrypt NIP-44 with recipient nsec')
-  console.log('│  Step 2: Use decoyKey from payload')
+  console.log('┌─ 3. DECRYPT (normal way - any Nostr client) ──────────────┐')
+  console.log('│  Decrypt NIP-44 with recipient nsec')
   console.log('│  Result: "' + decoyResult + '"')
+  console.log('│')
+  console.log('│  ✓ Works with Damus, Primal, Amethyst, etc!')
   console.log('└───────────────────────────────────────────────────────────┘\n')
 
-  // === 4. DECRYPT HIDDEN ===
-  const hiddenResult = decryptFalseBottom(ct, hiddenKey)
+  // === 4. REVEAL HIDDEN (requires secret) ===
+  const hiddenResult = revealHidden(decoyResult, secret)
 
-  console.log('┌─ 4. DECRYPT (secret way - NIP-44 + hidden key) ───────────┐')
-  console.log('│  Step 1: Decrypt NIP-44 with recipient nsec')
-  console.log('│  Step 2: Use hiddenKey (pre-shared secretly)')
+  console.log('┌─ 4. DECRYPT (secret way - with pre-shared secret) ────────┐')
+  console.log('│  Step 1: Decrypt NIP-44 → "' + decoyResult + '"')
+  console.log('│  Step 2: XOR with secret')
   console.log('│  Result: "' + hiddenResult + '"')
   console.log('└───────────────────────────────────────────────────────────┘\n')
 
-  console.log('✓ Looks like normal NIP-44 DM on Nostr')
-  console.log('✓ If nsec compromised: attacker uses decoyKey, sees decoy')
-  console.log('✓ Hidden message requires separately shared hiddenKey')
+  console.log('✓ NIP-44 message is 100% normal - no suspicious format')
+  console.log('✓ Works with ALL existing Nostr clients')
+  console.log('✓ Hidden message only revealed with separately shared secret')
 }
 
 main().catch(console.error)
